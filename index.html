@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CineMatch — Movie Recommendation System</title>
+<meta name="description" content="Pick a movie you love and discover similar ones using TF-IDF and cosine similarity.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="#/" aria-label="CineMatch home">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/></svg>
+    CineMatch
+  </a>
+  <nav aria-label="Main">
+    <a href="#/" id="nav-home">Home</a>
+    <a href="#how">How it works</a>
+    <a href="#about">About</a>
+  </nav>
+</header>
+
+<main id="main">
+
+  <!-- ================= HOME ================= -->
+  <section id="view-home" class="view page">
+    <div class="hero">
+      <p class="eyebrow">Content-based recommendations</p>
+      <h1>Pick a movie you love. Find what to watch next.</h1>
+      <p class="lede">CineMatch compares genres and descriptions to suggest movies similar to the one you choose.</p>
+    </div>
+
+    <form id="search-form" class="card search-card" autocomplete="off" novalidate>
+      <div class="search-row">
+        <div class="field grow">
+          <label for="movie-input">Choose a movie</label>
+          <div class="combo">
+            <div class="input-wrap" id="input-wrap">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+              <input id="movie-input" type="text" placeholder="Start typing a title, e.g. Interstellar"
+                     role="combobox" aria-expanded="false" aria-controls="suggestions" aria-autocomplete="list">
+            </div>
+            <ul id="suggestions" class="suggestions" role="listbox" hidden></ul>
+          </div>
+          <p id="input-error" class="field-error" role="alert" hidden></p>
+        </div>
+
+        <div class="field">
+          <span id="count-label">How many suggestions</span>
+          <div class="segmented" role="group" aria-labelledby="count-label">
+            <button type="button" class="seg is-on" data-n="5" aria-pressed="true">5</button>
+            <button type="button" class="seg" data-n="10" aria-pressed="false">10</button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary">
+          Recommend movies
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+
+      <div class="quick">
+        <span>Quick picks</span>
+        <div id="quick-picks" class="chips"></div>
+      </div>
+    </form>
+
+    <section id="how" class="how" aria-labelledby="how-h">
+      <h2 id="how-h">How it works</h2>
+      <div class="grid3">
+        <div class="card step"><span class="num">1</span><h3>Select a movie</h3><p>Search the dataset and pick a title you already know and like.</p></div>
+        <div class="card step"><span class="num">2</span><h3>Analyse its content</h3><p>Genres and overview text are cleaned and turned into TF-IDF feature vectors.</p></div>
+        <div class="card step"><span class="num">3</span><h3>Compare and rank</h3><p>Cosine similarity scores every other movie; the closest matches are shown first.</p></div>
+      </div>
+    </section>
+  </section>
+
+  <!-- ================= RESULTS ================= -->
+  <section id="view-results" class="view page" hidden>
+    <div id="results-loading" class="card state" aria-live="polite" hidden>
+      <span class="state-icon teal"><svg class="spin" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"/></svg></span>
+      <h2>Preparing recommendations</h2>
+      <p>Comparing movie features and ranking similarity.</p>
+    </div>
+
+    <div id="results-error" class="card state" role="alert" hidden>
+      <span class="state-icon amber" id="error-icon"></span>
+      <h2 id="error-title"></h2>
+      <p id="error-text"></p>
+      <div id="error-suggest" class="chips" hidden></div>
+      <a class="btn-ghost" href="#/">Choose another movie</a>
+    </div>
+
+    <div id="results-content" hidden>
+      <section class="card selected" aria-label="Selected movie">
+        <div id="sel-poster" class="poster big" role="img"></div>
+        <div class="sel-body">
+          <p class="eyebrow">Because you chose</p>
+          <h1 id="sel-title"></h1>
+          <div id="sel-genres" class="chips small"></div>
+          <p id="sel-overview" class="muted"></p>
+        </div>
+        <a class="btn-ghost" href="#/">Change movie</a>
+      </section>
+
+      <div class="results-layout">
+        <section class="results-main" aria-labelledby="top-h">
+          <div class="results-head">
+            <h2 id="top-h"></h2>
+            <span class="muted small">Ranked by cosine similarity</span>
+          </div>
+          <ol id="result-list" class="result-list"></ol>
+        </section>
+
+        <aside class="results-side" aria-label="Details">
+          <div class="card side-card">
+            <h2>Settings</h2>
+            <span id="count-label-2" class="muted small">Number of suggestions</span>
+            <div class="segmented" role="group" aria-labelledby="count-label-2" id="results-seg">
+              <button type="button" class="seg" data-n="5" aria-pressed="false">5</button>
+              <button type="button" class="seg" data-n="10" aria-pressed="false">10</button>
+            </div>
+          </div>
+          <div class="card side-card">
+            <h2>Shared with your pick</h2>
+            <div id="shared-terms" class="chips small"></div>
+            <p class="muted small">Genre and overview terms the top matches have in common with your movie.</p>
+          </div>
+          <div class="card side-card">
+            <h2>Reading the score</h2>
+            <p class="muted small">A score closer to 1.00 means the movie descriptions are more alike. It reflects text similarity, not whether you will enjoy the film.</p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer id="about" class="footer">
+  <p>Suggestions are based on movie metadata such as genre and overview, not on your personal taste. Quality depends on the dataset used.</p>
+  <p>B.Tech minor project, Computer Science and Engineering, Lingaya's Vidyapeeth, Faridabad. Jatin Singh and Aaditya Prasad, guided by Ms. Geeta.</p>
+  <p class="mode" id="mode-badge">Checking data source…</p>
+</footer>
+
+<script src="data/movies.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
